@@ -1,38 +1,12 @@
 #!/usr/bin/env node
-
-/**
- * Module dependencies.
- */
-
-const app = require("../app");
 const debug = require("debug")("back:server");
 const http = require("http");
+const socketIO = require("socket.io");
 
-/**
- * Get port from environment and store in Express.
- */
+const app = require("../app");
+const Socket = require("../utils/socket/socket");
 
-const port = normalizePort(process.env.PORT || "3000");
-app.set("port", port);
-
-/**
- * Create HTTP server.
- */
-
-const server = http.createServer(app);
-
-/**
- * Listen on provided port, on all network interfaces.
- */
-
-server.listen(port);
-server.on("error", onError);
-server.on("listening", onListening);
-
-/**
- * Normalize a port into a number, string, or false.
- */
-
+// Normalize a port into a number, string, or false.
 function normalizePort(val) {
   const port = parseInt(val, 10);
 
@@ -49,10 +23,7 @@ function normalizePort(val) {
   return false;
 }
 
-/**
- * Event listener for HTTP server "error" event.
- */
-
+// Event listener for HTTP server "error" event.
 function onError(error) {
   if (error.syscall !== "listen") {
     throw error;
@@ -75,12 +46,25 @@ function onError(error) {
   }
 }
 
-/**
- * Event listener for HTTP server "listening" event.
- */
-
+// Event listener for HTTP server "listening" event.
 function onListening() {
   const addr = server.address();
   const bind = typeof addr === "string" ? "pipe " + addr : "port " + addr.port;
   debug("Listening on " + bind);
 }
+
+// Get port from environment and store in Express.
+const port = normalizePort(process.env.PORT || "4000");
+app.set("port", port);
+
+const server = http.createServer(app);
+const io = socketIO(server);
+const socket = new Socket(io);
+
+io.on("connection", socket.getSocketSwitch);
+io.on("disconnection", socket.getDisconnectCallback);
+
+// Listen on provided port, on all network interfaces.
+server.listen(port);
+server.on("error", onError);
+server.on("listening", onListening);
