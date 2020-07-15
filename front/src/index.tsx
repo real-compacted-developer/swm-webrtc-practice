@@ -13,7 +13,7 @@ ReactDOM.render(
       <BrowserRouter>
         <Switch>
           <Route exact path="/" component={Home} />
-          <Route exact path="/chat-room/:room/:name" component={ChatRoom} />
+          <Route exact path="/:roomNumber/:name" component={ChatRoom} />
         </Switch>
       </BrowserRouter>
     </SocketContext>
