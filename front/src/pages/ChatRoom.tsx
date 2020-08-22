@@ -5,14 +5,15 @@ import { useSocket } from "../hooks/useSocket";
 import { useParams } from "react-router-dom";
 
 const ChatRoom: React.FC = () => {
+  let peer: any = undefined;
+  let myAudioStream: any = undefined;
   const [inputMessage, setInputMessage] = useState<string>("");
 
   const socket = useSocket();
-  const { name, room } = useParams();
+  const { name, roomNumber } = useParams();
 
   const [users, setUsers] = useState<[]>([]);
   const [messages, setMessages] = useState<any>([]);
-  const [myAudioStream, setMyAudioStream] = useState<any>();
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const bindEvents = (p: any) => {
@@ -38,7 +39,17 @@ const ChatRoom: React.FC = () => {
   };
 
   useEffect(() => {
-    socket?.emit("join", { name, roomNumber: room }, (err: Error) => {
+    navigator.mediaDevices
+      .getUserMedia({
+        video: false,
+        audio: true,
+      })
+      .then((a) => {
+        myAudioStream = a;
+        console.log(myAudioStream);
+      });
+
+    socket?.emit("join", { name, roomNumber }, (err: Error) => {
       if (err) {
         alert(err);
       } else {
@@ -56,7 +67,9 @@ const ChatRoom: React.FC = () => {
           video: false,
           audio: true,
         });
-        const peer = new SimplePeer({
+
+        console.log(stream);
+        peer = new SimplePeer({
           initiator: true,
           stream,
           config: {
@@ -82,30 +95,31 @@ const ChatRoom: React.FC = () => {
       setMessages((prev: any) => [...prev, msg]);
     });
 
-    socket?.on("transmitOffer", (data: any) => {
+    socket?.on("transmitOffer", async (data: any) => {
       console.log("receiving Offer", data);
 
-      // if (peer === null) {}
-      const peer = new SimplePeer({
-        initiator: false,
-        stream: myAudioStream,
-        config: {
-          iceServers: [
-            {
-              urls: "stun:stun.l.google.com:19302",
-            },
-            {
-              urls: "stun:global.stun.twilio.com:3478?transport=udp",
-            },
-            {
-              urls: "turn:numb.viagenie.ca",
-              credential: "hiragana",
-              username: "mornirmornir@hotmail.com",
-            },
-          ],
-        },
-      });
-      bindEvents(peer);
+      if (peer === undefined) {
+        peer = new SimplePeer({
+          initiator: false,
+          stream: myAudioStream,
+          config: {
+            iceServers: [
+              {
+                urls: "stun:stun.l.google.com:19302",
+              },
+              {
+                urls: "stun:global.stun.twilio.com:3478?transport=udp",
+              },
+              {
+                urls: "turn:numb.viagenie.ca",
+                credential: "hiragana",
+                username: "mornirmornir@hotmail.com",
+              },
+            ],
+          },
+        });
+        bindEvents(peer);
+      }
       peer.signal(data);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -113,11 +127,6 @@ const ChatRoom: React.FC = () => {
 
   const startAudioChat = async () => {
     try {
-      const a = await navigator.mediaDevices.getUserMedia({
-        video: false,
-        audio: true,
-      });
-      setMyAudioStream(a);
       socket?.emit("askAudio");
     } catch (e) {
       console.log(e.message);

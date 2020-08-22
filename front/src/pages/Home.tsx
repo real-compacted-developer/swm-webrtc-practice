@@ -37,7 +37,7 @@ const Home: React.FC = () => {
           <div className="form-field">
             <button
               type="submit"
-              onClick={() => history.push(`/chat-room/${roomNumber}/${name}`)}
+              onClick={() => history.push(`/${roomNumber}/${name}`)}
             >
               JOIN
             </button>
